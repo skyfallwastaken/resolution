@@ -367,12 +367,19 @@ export const POST: RequestHandler = async (event) => {
 		shippingMethod
 	});
 	} catch (e) {
-		await db.update(warehouseOrder)
-			.set({ status: 'APPROVED', updatedAt: new Date() })
-			.where(and(
-				eq(warehouseOrder.id, orderId),
-				eq(warehouseOrder.status, 'SHIPPED')
-			));
+		try {
+			await db.update(warehouseOrder)
+				.set({ status: 'APPROVED', updatedAt: new Date() })
+				.where(and(
+					eq(warehouseOrder.id, orderId),
+					eq(warehouseOrder.status, 'SHIPPED')
+				));
+		} catch (rollbackError) {
+			console.error('Failed to roll back warehouse order status after shipment error', {
+				orderId,
+				rollbackError
+			});
+		}
 		throw e;
 	}
 };
