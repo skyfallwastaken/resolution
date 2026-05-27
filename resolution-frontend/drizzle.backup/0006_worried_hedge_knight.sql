@@ -1,1 +1,0 @@
-DROP TABLE "fufiller_pathway" CASCADE;
