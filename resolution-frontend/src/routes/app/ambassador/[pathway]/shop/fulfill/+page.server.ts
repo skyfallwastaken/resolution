@@ -10,7 +10,8 @@ import {
 	warehouseOrderTemplate,
 	warehouseOrderTemplateItem,
 	warehouseItem,
-    shopOrder
+    shopOrder,
+    transactionLedger
 } from '$lib/server/db/schema';
 import { and, eq, gte, inArray, or, sql } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
@@ -21,6 +22,7 @@ import { createHcbTransfer, getOrgIdForPathway } from '$lib/server/hcb';
 import { selectPackaging } from '$lib/server/packaging';
 import { fetchCheapestRate } from '$lib/server/canada-post';
 import { resolveCountryCode } from '$lib/server/countries';
+import { ShopError } from '$lib/shop/utils';
 
 // Hard cap on the auto fetched shipping estimate. Mirrors the limit in
 // /warehouse/orders/new so a rogue rate response cannot trigger a huge
@@ -200,12 +202,19 @@ export const actions: Actions = {
         if (!orderObj.success) throw error(400, 'Invalid request data');
 
         const data = orderObj.data
+        // Restrict to PENDING orders so repeated/crafted submissions cannot re-approve
+        // an order that is already PROCESSING/FULFILLED/CANCELED/REJECTED
+        // (which would create duplicate warehouse orders).
         const order = await db.query.shopOrder.findFirst({
-            where: and(eq(shopOrder.pathway, pathwayId), eq(shopOrder.id, data.id)),
+            where: and(
+                eq(shopOrder.pathway, pathwayId),
+                eq(shopOrder.id, data.id),
+                eq(shopOrder.status, 'PENDING')
+            ),
             with: { item: true, user: true }
         });
 
-        if (!order) throw error(404, 'Order not found')
+        if (!order) throw error(404, 'Pending order not found')
         if (!order.item) throw error(400, 'Nonexistent order item')
         if (!order.user) throw error(400, 'Order has no associated user')
         if (!order.shippingAddress) throw error(400, 'Order missing shipping address')
@@ -242,18 +251,22 @@ export const actions: Actions = {
             }));
         }
         else {
-            // nothing to ship so just mark it as done
+            // nothing to ship so just mark it as done.
+            // Atomic transition: only update if still PENDING so a concurrent
+            // submission cannot double-fulfill.
             try {
-                await db.transaction(async (tx) => {
-                    await tx.update(shopOrder)
-                        .set({
-                            status: 'FULFILLED',
-                            fulfilledBy: userId,
-                            fulfilledAt: new Date(),
-                            fulfillerNotes: data.note ?? null
-                        })
-                        .where(eq(shopOrder.id, order.id));
-                });
+                const [updated] = await db.update(shopOrder)
+                    .set({
+                        status: 'FULFILLED',
+                        fulfilledBy: userId,
+                        fulfilledAt: new Date(),
+                        fulfillerNotes: data.note ?? null
+                    })
+                    .where(and(eq(shopOrder.id, order.id), eq(shopOrder.status, 'PENDING')))
+                    .returning({ id: shopOrder.id });
+                if (!updated) {
+                    return fail(409, { error: 'Order is no longer pending' });
+                }
             } catch (e: any) {
                 return fail(500, { error: e?.message || 'Failed to mark order as fulfilled' });
             }
@@ -389,9 +402,15 @@ export const actions: Actions = {
                     }
                 }
 
-                await tx.update(shopOrder)
+                // Gate the status transition on still being PENDING so two
+                // concurrent approves can't both create warehouse orders.
+                const [orderUpdated] = await tx.update(shopOrder)
                     .set({ status: 'PROCESSING', fulfilledBy: userId, fulfillerNotes: data.note ?? null })
-                    .where(eq(shopOrder.id, order.id));
+                    .where(and(eq(shopOrder.id, order.id), eq(shopOrder.status, 'PENDING')))
+                    .returning({ id: shopOrder.id });
+                if (!orderUpdated) {
+                    throw new Error('Order is no longer pending (already approved or canceled)');
+                }
 
                 return wo.id;
             });
@@ -474,17 +493,67 @@ export const actions: Actions = {
         if (!orderObj.success) throw error(400, 'Invalid request data');
 
         const data = orderObj.data
-        const order = await db.query.shopOrder.findFirst({
-            where: and(eq(shopOrder.pathway, pathwayId), eq(shopOrder.id, data.id)),
-            with: { item: true, user: true }
-        });
 
-        if (!order) throw error(400, 'Order ID does not exist');
+        try {
+            await db.transaction(async (tx) => {
+                // Only allow rejecting a PENDING order. Atomic update guards
+                // against races with concurrent approve/cancel.
+                const [order] = await tx
+                    .select()
+                    .from(shopOrder)
+                    .where(and(
+                        eq(shopOrder.pathway, pathwayId),
+                        eq(shopOrder.id, data.id),
+                        eq(shopOrder.status, 'PENDING')
+                    ))
+                    .limit(1);
 
-        await db.update(shopOrder)
-            .set({ status: 'REJECTED', cancelledReason: data.note})
-            .where(eq(shopOrder.id, data.id));
-        
+                if (!order) throw new ShopError(404, { message: 'Pending order not found' });
+
+                const [updated] = await tx
+                    .update(shopOrder)
+                    .set({
+                        status: 'REJECTED',
+                        cancelledReason: data.note,
+                        fulfilledBy: userId,
+                        fulfillerNotes: data.note
+                    })
+                    .where(and(eq(shopOrder.id, data.id), eq(shopOrder.status, 'PENDING')))
+                    .returning({ id: shopOrder.id });
+
+                if (!updated) {
+                    throw new ShopError(409, { message: 'Order is no longer pending' });
+                }
+
+                // Restore stock if the linked shop item still exists and tracks stock.
+                if (order.item) {
+                    await tx.update(shopItem)
+                        .set({ stock: sql`${shopItem.stock} + 1` })
+                        .where(and(
+                            eq(shopItem.id, order.item),
+                            sql`${shopItem.stock} IS NOT NULL`
+                        ));
+                }
+
+                // Refund the buyer with a positive ledger entry equal to
+                // what they originally paid. Mirrors the participant cancel
+                // flow so a denied user is made whole.
+                if (order.userId && order.totalAmount > 0) {
+                    await tx.insert(transactionLedger).values({
+                        userId: order.userId,
+                        pathway: pathwayId,
+                        amount: order.totalAmount,
+                        reason: 'REFUND',
+                        refType: 'SHOP',
+                        refId: order.id
+                    });
+                }
+            });
+        } catch (e: any) {
+            if (e instanceof ShopError) return fail(e.status, { error: e.body.message });
+            return fail(500, { error: e?.message || 'Failed to reject order' });
+        }
+
         return { success: true, orderId: data.id }
     }
 }

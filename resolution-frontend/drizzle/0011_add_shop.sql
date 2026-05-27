@@ -77,4 +77,15 @@ ALTER TABLE "shop_orders" ADD CONSTRAINT "shop_orders_user_id_user_id_fk" FOREIG
 ALTER TABLE "shop_orders" ADD CONSTRAINT "shop_orders_pathway_pathway_shop_pathway_fk" FOREIGN KEY ("pathway") REFERENCES "public"."pathway_shop"("pathway") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "shop_orders" ADD CONSTRAINT "shop_orders_shop_item_id_shop_item_id_fk" FOREIGN KEY ("shop_item_id") REFERENCES "public"."shop_item"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "shop_orders" ADD CONSTRAINT "shop_orders_fulfilled_by_user_id_fk" FOREIGN KEY ("fulfilled_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "warehouse_order" ADD CONSTRAINT "warehouse_order_shop_order_id_shop_orders_id_fk" FOREIGN KEY ("shop_order_id") REFERENCES "public"."shop_orders"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "warehouse_order" ADD CONSTRAINT "warehouse_order_shop_order_id_shop_orders_id_fk" FOREIGN KEY ("shop_order_id") REFERENCES "public"."shop_orders"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+-- Seed one disabled pathway_shop row per existing pathway so the ambassador
+-- shop pages don't 404 and shop_item / shop_orders / currency_transactions
+-- FK lookups can succeed. Ambassadors flip is_enabled when ready.
+INSERT INTO "pathway_shop" ("id", "pathway", "is_enabled") VALUES
+  ('seed_pathway_shop_python', 'PYTHON', false),
+  ('seed_pathway_shop_rust', 'RUST', false),
+  ('seed_pathway_shop_game_dev', 'GAME_DEV', false),
+  ('seed_pathway_shop_hardware', 'HARDWARE', false),
+  ('seed_pathway_shop_design', 'DESIGN', false),
+  ('seed_pathway_shop_general_coding', 'GENERAL_CODING', false)
+ON CONFLICT ("pathway") DO NOTHING;

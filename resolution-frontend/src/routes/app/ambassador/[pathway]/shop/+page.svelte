@@ -1,8 +1,9 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { PageData, ActionData } from './$types';
 	import { PATHWAY_INFO } from '$lib/pathways';
+	import { enhance } from '$app/forms';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const info = $derived(PATHWAY_INFO[data.pathwayId]);
 	const pathwaySlug = $derived(data.pathwayId.toLowerCase());
@@ -78,6 +79,36 @@
 			<div class="stat-label">Active items</div>
 			<div class="stat-value">{data.items.filter((i) => i.isActive).length}</div>
 		</div>
+	</section>
+
+	<section class="grant-section">
+		<h2>Grant {data.shop.currencyNamePlural}</h2>
+		<p class="grant-hint">
+			Award currency to a participant so they can spend it in the shop.
+		</p>
+		{#if form?.grantSuccess}
+			<div class="grant-message success">
+				Granted {form.amount} {form.amount === 1 ? data.shop.currencyName : data.shop.currencyNamePlural}
+				to {form.recipientEmail}.
+			</div>
+		{:else if form?.grantError}
+			<div class="grant-message error">{form.grantError}</div>
+		{/if}
+		<form method="POST" action="?/grant" class="grant-form" use:enhance>
+			<div class="grant-field">
+				<label for="grant-email">Recipient email</label>
+				<input id="grant-email" name="recipientEmail" type="email" required maxlength="254" />
+			</div>
+			<div class="grant-field amount">
+				<label for="grant-amount">Amount</label>
+				<input id="grant-amount" name="amount" type="number" min="1" required />
+			</div>
+			<div class="grant-field grow">
+				<label for="grant-note">Note (optional)</label>
+				<input id="grant-note" name="note" type="text" maxlength="500" />
+			</div>
+			<button type="submit" class="btn btn-primary">Grant</button>
+		</form>
 	</section>
 
 	<section class="items-section">
@@ -216,6 +247,46 @@
 	.stat-value.warn { color: #ff8c37; }
 
 	.items-section h2 { font-size: 1.25rem; margin: 0 0 1rem 0; }
+
+	.grant-section {
+		margin-bottom: 2rem;
+		padding: 1.25rem;
+		background: rgba(255, 255, 255, 0.85);
+		border: 1px solid #af98ff;
+		border-radius: 12px;
+	}
+	.grant-section h2 { font-size: 1.1rem; margin: 0 0 0.25rem 0; }
+	.grant-hint { font-size: 0.85rem; color: #5a6c7d; margin: 0 0 0.75rem 0; }
+	.grant-message {
+		padding: 0.5rem 0.75rem;
+		border-radius: 8px;
+		font-size: 0.85rem;
+		margin-bottom: 0.75rem;
+	}
+	.grant-message.success { background: rgba(51, 214, 166, 0.15); color: #1a8c6a; }
+	.grant-message.error { background: rgba(236, 55, 80, 0.1); color: #c0233a; }
+	.grant-form {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		align-items: flex-end;
+	}
+	.grant-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		min-width: 160px;
+	}
+	.grant-field.amount { min-width: 100px; }
+	.grant-field.grow { flex: 1; min-width: 200px; }
+	.grant-field label { font-size: 0.75rem; color: #5a6c7d; }
+	.grant-field input {
+		padding: 0.5rem 0.6rem;
+		border: 1px solid #d0d5dd;
+		border-radius: 8px;
+		font-family: inherit;
+		font-size: 0.875rem;
+	}
 
 	.empty-state {
 		text-align: center;

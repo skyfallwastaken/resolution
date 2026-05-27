@@ -163,16 +163,21 @@ beforeEach(reset);
 // ---- deny tests -------------------------------------------------------------
 
 describe('deny action', () => {
-	it('marks the order as REJECTED with the provided reason', async () => {
+	it('marks the order as REJECTED with the provided reason and refunds the buyer', async () => {
 		mockAmbassadorFindFirst.mockResolvedValue({ id: 'ap-1' });
-		mockShopOrderFindFirst.mockResolvedValue({
-			id: 'order-1',
-			pathway: 'PYTHON',
-			item: null,
-			user: SAMPLE_USER
-		});
-		// `db.update(shopOrder).set(...).where(...)` — pop one value (unused).
-		updateQueue.push(undefined);
+		// In-tx: select order (must be PENDING), update returns row, then insert ledger refund.
+		txSelectQueue.push([
+			{
+				id: 'order-1',
+				pathway: 'PYTHON',
+				userId: SAMPLE_USER.id,
+				item: null,
+				totalAmount: 5,
+				status: 'PENDING'
+			}
+		]);
+		txUpdateQueue.push([{ id: 'order-1' }]); // status -> REJECTED
+		txInsertQueue.push(undefined); // refund ledger row
 
 		const event = makeEvent({ form: { id: 'order-1', note: 'spammy address' } });
 		const result = await actions.deny(event);
@@ -204,12 +209,14 @@ describe('deny action', () => {
 		await expect(actions.deny(event)).rejects.toMatchObject({ status: 404 });
 	});
 
-	it('throws 400 when order id does not exist', async () => {
+	it('returns a 404 ActionFailure when no PENDING order matches the id', async () => {
 		mockAmbassadorFindFirst.mockResolvedValue({ id: 'ap-1' });
-		mockShopOrderFindFirst.mockResolvedValue(undefined);
+		// In-tx select returns no row (no pending order).
+		txSelectQueue.push([]);
 
 		const event = makeEvent({ form: { id: 'missing', note: 'x' } });
-		await expect(actions.deny(event)).rejects.toMatchObject({ status: 400 });
+		const result = await actions.deny(event);
+		expect(result).toMatchObject({ status: 404 });
 	});
 });
 
@@ -225,8 +232,9 @@ describe('approve action — CUSTOM items', () => {
 			user: SAMPLE_USER,
 			shippingAddress: SAMPLE_ADDRESS
 		});
-		// The CUSTOM branch wraps the shopOrder update in a transaction.
-		txUpdateQueue.push(undefined);
+		// CUSTOM branch now uses an atomic update guarded by status=PENDING,
+		// returning the updated row id.
+		updateQueue.push([{ id: 'order-1' }]);
 
 		const event = makeEvent({ form: { id: 'order-1', note: 'gifted manually' } });
 		const result = await actions.approve(event);
@@ -272,11 +280,12 @@ describe('approve action — WAREHOUSE_ITEM', () => {
 		// Inside transaction: warehouseOrder insert returns the new id, then
 		// per-line insert returns nothing, then the stock-decrement update
 		// must return a row to satisfy the "another order claimed it" check,
-		// then the shopOrder update is awaited.
+		// then the shopOrder update (guarded by status=PENDING) returns the
+		// updated row.
 		txInsertQueue.push([{ id: 'wo-1' }]); // warehouseOrder insert
 		txInsertQueue.push(undefined); // warehouseOrderItem insert
 		txUpdateQueue.push([{ id: 'wh-1' }]); // decrement stock
-		txUpdateQueue.push(undefined); // shopOrder update
+		txUpdateQueue.push([{ id: 'order-2' }]); // shopOrder update returning
 		// After tx, billing branch: getOrgIdForPathway → null (no HCB), so we
 		// hit `db.update(warehouseOrder).set({billingStatus: 'NOT_APPLICABLE'})`.
 		updateQueue.push(undefined);
@@ -370,10 +379,11 @@ describe('approve action — WAREHOUSE_TEMPLATE', () => {
 		txInsertQueue.push([{ id: 'wo-2' }]); // warehouseOrder
 		txInsertQueue.push(undefined); // warehouseOrderItem insert (wh-1)
 		txInsertQueue.push(undefined); // warehouseOrderItem insert (wh-2)
-		// Two stock decrement updates, then the shopOrder transition.
+		// Two stock decrement updates, then the shopOrder transition (which
+		// is guarded by status=PENDING and returns the updated row).
 		txUpdateQueue.push([{ id: 'wh-1' }]);
 		txUpdateQueue.push([{ id: 'wh-2' }]);
-		txUpdateQueue.push(undefined); // shopOrder update
+		txUpdateQueue.push([{ id: 'order-3' }]); // shopOrder update returning
 		// Post-tx billing branch: no HCB, so one update to mark NOT_APPLICABLE.
 		updateQueue.push(undefined);
 

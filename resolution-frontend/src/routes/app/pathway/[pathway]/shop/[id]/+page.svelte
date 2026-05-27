@@ -13,13 +13,12 @@
 
 	let isSubmitting = $state(false);
 
-	// prefill from week-submission flow style: name + email come from session user
-	// svelte-ignore state_referenced_locally
-	let firstName = $state(data.user.firstName);
-	// svelte-ignore state_referenced_locally
-	let lastName = $state(data.user.lastName);
-	// svelte-ignore state_referenced_locally
-	let email = $state(data.user.email);
+	// Name + email come from the session user and are used at fulfillment time.
+	// Show them as read-only context, but do NOT bind to form inputs because
+	// the server currently doesn't persist any override the buyer might enter.
+	const firstName = $derived(data.user.firstName);
+	const lastName = $derived(data.user.lastName);
+	const email = $derived(data.user.email);
 	let phone = $state('');
 
 	// shipping address (only used for physical items)
@@ -87,19 +86,23 @@
 
 					<section class="form-section">
 						<h2>Your details</h2>
+						<p class="section-hint">
+							We'll ship using the name and email on your Resolution account.
+							<a href="/app/profile">Update your account</a> if any of these are wrong.
+						</p>
 						<div class="form-row">
 							<div class="form-group">
 								<label for="firstName">First name</label>
-								<input id="firstName" name="firstName" type="text" bind:value={firstName} required maxlength="100" />
+								<input id="firstName" type="text" value={firstName} readonly disabled />
 							</div>
 							<div class="form-group">
 								<label for="lastName">Last name</label>
-								<input id="lastName" name="lastName" type="text" bind:value={lastName} required maxlength="100" />
+								<input id="lastName" type="text" value={lastName} readonly disabled />
 							</div>
 						</div>
 						<div class="form-group">
 							<label for="email">Email</label>
-							<input id="email" name="email" type="email" bind:value={email} required maxlength="254" />
+							<input id="email" type="email" value={email} readonly disabled />
 						</div>
 						<div class="form-group">
 							<label for="phone">Phone number</label>

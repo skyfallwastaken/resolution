@@ -23,8 +23,8 @@ const addCustomItemSchema = z.object({ // for grants
     name: z.string().min(1).max(50),
     description: z.string().min(1).max(2000),
     imageUrl: z.url(),
-    price: z.coerce.number().int(),
-    stock: z.coerce.number().int(),
+    price: z.coerce.number().int().nonnegative(), // disallow negative prices (would credit currency to buyer)
+    stock: z.coerce.number().int().nonnegative(),
     isActive: z.coerce.boolean().default(false) // used because ambassador may not want it to be instantly available
 })
 
@@ -34,7 +34,7 @@ const addWarehouseItemSchema = z.object({
     name: z.string().min(1).max(50).or(z.string().max(0)),
     description: z.string().min(1), // required bcs warehouse doesn't provide
     imageUrl: z.union([z.url(), z.literal('')]).optional(),
-    price: z.coerce.number().int(),
+    price: z.coerce.number().int().nonnegative(), // disallow negative prices (would credit currency to buyer)
     // stock should be auto populated
     // stock: z.int().optional(), // optional stock override, check later that this is not over current stock
     isActive: z.coerce.boolean().default(false)
@@ -45,7 +45,7 @@ const addWarehouseTemplateSchema = z.object({
     name: z.string().min(1).max(50).or(z.string().max(0)), // not necessarily going to match template name
     description: z.string().min(1).max(2000),
     imageUrl: z.url(),
-    price: z.coerce.number().int(),
+    price: z.coerce.number().int().nonnegative(), // disallow negative prices (would credit currency to buyer)
     // should be autopopulated
     // stock: z.int(), // set max as current stock
     isActive: z.coerce.boolean().default(false)
@@ -138,7 +138,8 @@ export const actions: Actions = {
                 pathway: pathwayId,
                 name:  data.name?.trim() || wh.name,
                 description: data.description, // required from form
-                itemImageUrl: data.imageUrl ?? wh.imageUrl,
+                // treat blank/whitespace overrides as absent so warehouse image is used
+                itemImageUrl: data.imageUrl?.trim() || wh.imageUrl,
                 price: data.price,
                 stock: wh.quantity,
                 isActive: data.isActive,

@@ -90,24 +90,26 @@
 			<p class="curator">brought to you by <span>{data.curator}</span></p>
 		</header>
 
-		<a href="/app/pathway/{data.pathwayId.toLowerCase()}/shop" class="shop-link">
-			<img
-				src="https://icons.hackclub.com/api/icons/{pathway.color}/bag"
-				alt=""
-				aria-hidden="true"
-				class="shop-icon"
-			/>
-			<div class="shop-text">
-				<span class="shop-title">Visit the shop</span>
-				<span class="shop-sub">Spend what you've earned on swag and goodies</span>
-			</div>
-			<img
-				src="https://icons.hackclub.com/api/icons/8492a6/forward"
-				alt=""
-				aria-hidden="true"
-				class="shop-chevron"
-			/>
-		</a>
+		{#if data.shopEnabled}
+			<a href="/app/pathway/{data.pathwayId.toLowerCase()}/shop" class="shop-link">
+				<img
+					src="https://icons.hackclub.com/api/icons/{pathway.color}/bag"
+					alt=""
+					aria-hidden="true"
+					class="shop-icon"
+				/>
+				<div class="shop-text">
+					<span class="shop-title">Visit the shop</span>
+					<span class="shop-sub">Spend what you've earned on swag and goodies</span>
+				</div>
+				<img
+					src="https://icons.hackclub.com/api/icons/8492a6/forward"
+					alt=""
+					aria-hidden="true"
+					class="shop-chevron"
+				/>
+			</a>
+		{/if}
 
 		<div class="weeks-grid">
 			{#each weeks as week}
