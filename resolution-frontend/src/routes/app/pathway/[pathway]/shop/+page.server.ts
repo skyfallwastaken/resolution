@@ -1,25 +1,15 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
 import {
-	userPathway,
-	pathwayShop,
 	shopItem,
 	shopOrder,
 	transactionLedger
 } from '$lib/server/db/schema';
-import { and, eq, sql, desc, or } from 'drizzle-orm';
-import { error, fail, redirect } from '@sveltejs/kit';
-import { PATHWAY_IDS, type PathwayId } from '$lib/pathways';
+import { and, eq, sql, desc } from 'drizzle-orm';
+import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { addressSchema, validateFormData } from '$lib/server/validation';
-import { assertShopAccess, shopError } from '$lib/shop/utils' 
-import { guardAdminOrAmbassador } from '$lib/server/auth/guard';
-
-const purchaseSchema = z.object({
-	itemId: z.string().min(1),
-	userNotes: z.string().max(500).optional(),
-	shippingAddress: addressSchema.optional() // optional as user might not actually be buying a physical item, in which case i don't think we need it
-});
+import { validateFormData } from '$lib/server/validation';
+import { assertShopAccess, ShopError } from '$lib/shop/utils';
 
 const cancelSchema = z.object({
 	orderId: z.string().min(1), // needs to be a valid string
@@ -66,89 +56,6 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 };
 
 export const actions: Actions = {
-    // commented out as this should probably be in ./[id]
-	// purchase: async ({ request, params, locals }) => {
-    //     if (!locals.user) throw redirect(302, '/api/auth/login');
-    //     const userId = locals.user.id;
-
-    //     const purchaseData = await validateFormData(purchaseSchema, request);
-
-    //     let orderId: string;
-    //     try {
-    //         orderId = await db.transaction(async (tx) => {
-    //             const { typedPathwayId } = await assertShopAccess(userId, params.pathway, tx);
-
-    //             const [item] = await tx
-    //                 .select()
-    //                 .from(shopItem)
-    //                 .where(and(
-    //                     eq(shopItem.id, purchaseData.itemId),
-    //                     eq(shopItem.pathway, typedPathwayId),
-    //                     eq(shopItem.isActive, true)
-    //                 ))
-    //                 .limit(1);
-
-    //             if (!item) throw new ShopError(400, { message: 'Item not found' });
-
-    //             if (item.itemType === 'PHYSICAL' && !purchaseData.shippingAddress) {
-    //                 throw new ShopError(400, { message: 'Shipping address required for physical items' });
-    //             }
-
-    //             const [{ balance }] = await tx
-    //                 .select({
-    //                     balance: sql<number>`COALESCE(SUM(${transactionLedger.amount}), 0)`.mapWith(Number)
-    //                 })
-    //                 .from(transactionLedger)
-    //                 .where(and(
-    //                     eq(transactionLedger.userId, userId),
-    //                     eq(transactionLedger.pathway, typedPathwayId)
-    //                 ));
-
-    //             if (balance < item.price) {
-    //                 throw new ShopError(400, { message: 'Not enough currency' });
-    //             }
-
-    //             if (item.stock !== null) {
-    //                 if (item.stock <= 0) throw new ShopError(400, { message: 'No stock remaining' });
-    //                 await tx.update(shopItem)
-    //                     .set({ stock: item.stock - 1 })
-    //                     .where(eq(shopItem.id, item.id));
-    //             }
-
-    //             const [order] = await tx
-    //                 .insert(shopOrder)
-    //                 .values({
-    //                     userId,
-    //                     pathway: typedPathwayId,
-    //                     totalAmount: item.price,
-    //                     item: item.id,
-    //                     itemPriceSnapshot: item.price,
-    //                     itemTypeSnapshot: item.itemType,
-    //                     itemNameSnapshot: item.name,
-    //                     shippingAddress: purchaseData.shippingAddress ?? null,
-    //                     userNotes: purchaseData.userNotes ?? null
-    //                 })
-    //                 .returning({ id: shopOrder.id });
-
-    //             await tx.insert(transactionLedger).values({
-    //                 userId,
-    //                 pathway: typedPathwayId,
-    //                 amount: -item.price,
-    //                 reason: 'PURCHASE',
-    //                 refType: 'SHOP',
-    //                 refId: order.id   // ← ties the ledger entry to the order
-    //             });
-
-    //             return order.id;
-    //         });
-    //     } catch (e) {
-    //         if (e instanceof ShopError) return fail(e.status, e.body);
-    //         throw e;
-    //     }
-
-    //     return { success: true, orderId };
-	// },
-
 	cancel: async ({ request, params, locals }) => {
         if (!locals.user) throw redirect(302, '/api/auth/login');
         const userId = locals.user.id;
@@ -170,24 +77,22 @@ export const actions: Actions = {
                     ))
                     .limit(1);
 
-                if (!order) throw new shopError(404, { message: 'No such order' });
+                if (!order) throw new ShopError(404, { message: 'No such order' });
 
                 await tx.update(shopOrder)
                     .set({ status: 'CANCELED', cancelledReason: cancelData.cancelReason })
                     .where(eq(shopOrder.id, order.id));
 
-                // restore stock if the item still exists and tracks stock
+                // restore stock if the item still exists and tracks stock.
+                // Use a SQL-level increment so concurrent cancellations /
+                // purchases don't lose updates.
                 if (order.item) {
-                    const [item] = await tx
-                        .select()
-                        .from(shopItem)
-                        .where(eq(shopItem.id, order.item))
-                        .limit(1);
-                    if (item && item.stock !== null) {
-                        await tx.update(shopItem)
-                            .set({ stock: item.stock + 1 })
-                            .where(eq(shopItem.id, item.id));
-                    }
+                    await tx.update(shopItem)
+                        .set({ stock: sql`${shopItem.stock} + 1` })
+                        .where(and(
+                            eq(shopItem.id, order.item),
+                            sql`${shopItem.stock} IS NOT NULL`
+                        ));
                 }
 
                 // refund: positive ledger entry equal to what was originally charged
@@ -201,7 +106,7 @@ export const actions: Actions = {
                 });
             });
         } catch (e) {
-            if (e instanceof shopError) return fail(e.status, e.body);
+            if (e instanceof ShopError) return fail(e.status, e.body);
             throw e;
         }
 

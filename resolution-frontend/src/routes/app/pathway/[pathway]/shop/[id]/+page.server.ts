@@ -1,24 +1,15 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
 import {
-	userPathway,
-	pathwayShop,
 	shopItem,
 	shopOrder,
 	transactionLedger
 } from '$lib/server/db/schema';
 import { and, eq, sql } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
-import { PATHWAY_IDS, type PathwayId } from '$lib/pathways';
 import { z } from 'zod';
 import { addressSchema, validateFormData } from '$lib/server/validation';
-
-// thrown inside transactions to abort + roll back; caught outside to convert to fail()
-class ShopError extends Error {
-	constructor(public status: number, public body: { message: string }) {
-		super(body.message);
-	}
-}
+import { assertShopAccess, ShopError } from '$lib/shop/utils';
 
 // always collect a shipping address regardless of item type
 const buySchema = z.object({
@@ -29,32 +20,6 @@ const buySchema = z.object({
 		.max(30, 'Phone number is too long'),
 	...addressSchema.shape
 });
-
-type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-async function assertShopAccess(userId: string, pathwayParam: string, conn: DbOrTx = db) {
-	const pathwayId = pathwayParam.toUpperCase();
-	if (!PATHWAY_IDS.includes(pathwayId as PathwayId)) throw error(404, 'Pathway not found');
-	const typedPathwayId = pathwayId as PathwayId;
-
-	const membership = await conn
-		.select()
-		.from(userPathway)
-		.where(and(eq(userPathway.userId, userId), eq(userPathway.pathway, typedPathwayId)))
-		.limit(1);
-	if (membership.length === 0) throw redirect(302, '/app');
-
-	const pathwayShopRow = await conn
-		.select()
-		.from(pathwayShop)
-		.where(eq(pathwayShop.pathway, typedPathwayId))
-		.limit(1);
-	if (pathwayShopRow.length === 0 || !pathwayShopRow[0].isEnabled) {
-		throw error(404);
-	}
-
-	return { typedPathwayId, shop: pathwayShopRow[0] };
-}
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { user } = await parent();

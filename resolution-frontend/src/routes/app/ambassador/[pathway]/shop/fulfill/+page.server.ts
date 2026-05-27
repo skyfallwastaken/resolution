@@ -179,7 +179,7 @@ export const actions: Actions = {
         // 2. confirm ID exists (done)
         // 3. check if item is linked to wh template or item (done)
         // 3a. if 3 is yes, order (done)
-        // 3b. (frontend) if 3 is no, notify ambassador they have to manually fufill (done)
+        // 3b. (frontend) if 3 is no, notify ambassador they have to manually fulfill (done)
         if (!locals.user) throw redirect(302, '/api/auth/login');
         const userId = locals.user.id;
 
@@ -206,7 +206,7 @@ export const actions: Actions = {
         });
 
         if (!order) throw error(404, 'Order not found')
-        if (!order.item) throw error(400, 'Nonexistant order item')
+        if (!order.item) throw error(400, 'Nonexistent order item')
         if (!order.user) throw error(400, 'Order has no associated user')
         if (!order.shippingAddress) throw error(400, 'Order missing shipping address')
 
@@ -248,9 +248,9 @@ export const actions: Actions = {
                     await tx.update(shopOrder)
                         .set({
                             status: 'FULFILLED',
-                            fufilledBy: userId,
-                            fufilledAt: new Date(),
-                            fufillerNotes: data.note ?? null
+                            fulfilledBy: userId,
+                            fulfilledAt: new Date(),
+                            fulfillerNotes: data.note ?? null
                         })
                         .where(eq(shopOrder.id, order.id));
                 });
@@ -390,7 +390,7 @@ export const actions: Actions = {
                 }
 
                 await tx.update(shopOrder)
-                    .set({ status: 'PROCESSING', fufilledBy: userId, fufillerNotes: data.note ?? null })
+                    .set({ status: 'PROCESSING', fulfilledBy: userId, fulfillerNotes: data.note ?? null })
                     .where(eq(shopOrder.id, order.id));
 
                 return wo.id;

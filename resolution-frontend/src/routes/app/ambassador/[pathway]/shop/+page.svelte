@@ -57,7 +57,7 @@
 					<img src="https://icons.hackclub.com/api/icons/white/add" alt="" width="16" height="16" />
 					New item
 				</a>
-				<a class="btn btn-outline" href="/app/ambassador/{pathwaySlug}/shop/fufill">
+				<a class="btn btn-outline" href="/app/ambassador/{pathwaySlug}/shop/fulfill">
 					<img src="https://icons.hackclub.com/api/icons/a633d6/package" alt="" width="16" height="16" />
 					Fulfill orders
 				</a>
@@ -70,9 +70,9 @@
 			<div class="stat-label">Total orders</div>
 			<div class="stat-value">{data.totalOrders}</div>
 		</div>
-		<a class="stat stat-link" href="/app/ambassador/{pathwaySlug}/shop/fufill">
+		<a class="stat stat-link" href="/app/ambassador/{pathwaySlug}/shop/fulfill">
 			<div class="stat-label">Awaiting fulfillment</div>
-			<div class="stat-value" class:warn={data.awaitingFufillment > 0}>{data.awaitingFufillment}</div>
+			<div class="stat-value" class:warn={data.awaitingFulfillment > 0}>{data.awaitingFulfillment}</div>
 		</a>
 		<div class="stat">
 			<div class="stat-label">Active items</div>

@@ -9,7 +9,7 @@ import { PATHWAY_IDS, type PathwayId } from '$lib/pathways';
 
 type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-export class shopError extends Error {
+export class ShopError extends Error {
     constructor(public status: number, public body: { message: string }) {
         super(body.message);
     }

@@ -19,11 +19,11 @@ export const load: PageServerLoad = async ({ parent }) => {
 		.orderBy(desc(shopItem.createdAt));
 
 	const totalOrders = await db.$count(shopOrder, eq(shopOrder.pathway, pathwayId));
-	const awaitingFufillment = await db.$count(
+	const awaitingFulfillment = await db.$count(
 		shopOrder,
 		and(
 			eq(shopOrder.pathway, pathwayId),
-			notInArray(shopOrder.status, ['FULFILLED', 'CANCELED'])
+			notInArray(shopOrder.status, ['FULFILLED', 'CANCELED', 'REJECTED'])
 		)
 	);
 
@@ -35,6 +35,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 		},
 		items,
 		totalOrders,
-		awaitingFufillment
+		awaitingFulfillment
 	};
 };

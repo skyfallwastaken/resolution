@@ -367,7 +367,7 @@ export const POST: RequestHandler = async (event) => {
 		await db.update(shopOrder)
 			.set({
 				status: 'FULFILLED',
-				fufilledAt: new Date(),
+				fulfilledAt: new Date(),
 				trackingNumber: trackingNumber ?? null
 			})
 			.where(eq(shopOrder.id, order.shopOrderId));

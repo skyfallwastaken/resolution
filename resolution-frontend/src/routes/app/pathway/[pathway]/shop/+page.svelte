@@ -24,12 +24,14 @@
 				return 'Fulfilled';
 			case 'CANCELED':
 				return 'Cancelled';
+			case 'REJECTED':
+				return 'Rejected';
 			default:
 				return status;
 		}
 	}
 
-	function switchShowState(e: MouseEvent) {
+	function switchShowState() {
 		showAll = !showAll
 	}
 </script>
@@ -73,39 +75,59 @@
                 {:else}
                     <div class="items-grid">
                         {#each data.items as item, index (item.id)}
-                            {#if index <= 3 || showAll}
+                            {#if index < 3 || showAll}
                                 {@const outOfStock = item.stock !== null && item.stock <= 0}
                                 {@const cantAfford = data.balance < item.price}
-                                <a
-                                    href="/app/pathway/{data.pathwayId.toLowerCase()}/shop/{item.id}"
-                                    class="item-card"
-                                    class:disabled={outOfStock}
-                                >
-                                    <div class="item-image">
-                                        {#if item.itemImageUrl}
-                                            <img src={item.itemImageUrl} alt={item.name} />
-                                        {:else}
-                                            <div class="item-image-placeholder">No image</div>
-                                        {/if}
-                                        {#if outOfStock}
+                                {#if outOfStock}
+                                    <div class="item-card disabled" aria-disabled="true">
+                                        <div class="item-image">
+                                            {#if item.itemImageUrl}
+                                                <img src={item.itemImageUrl} alt={item.name} />
+                                            {:else}
+                                                <div class="item-image-placeholder">No image</div>
+                                            {/if}
                                             <div class="overlay">Out of stock</div>
-                                        {/if}
-                                    </div>
-                                    <div class="item-body">
-                                        <div class="item-top">
-                                            <h3>{item.name}</h3>
                                         </div>
-                                        <p class="item-desc">{item.description}</p>
-                                        <div class="item-foot">
-                                            <span class="price" class:price-low={cantAfford && !outOfStock}>
-                                                {priceLabel(item.price)}
-                                            </span>
-                                            {#if item.stock !== null && !outOfStock}
-                                                <span class="stock">{item.stock} left</span>
+                                        <div class="item-body">
+                                            <div class="item-top">
+                                                <h3>{item.name}</h3>
+                                            </div>
+                                            <p class="item-desc">{item.description}</p>
+                                            <div class="item-foot">
+                                                <span class="price">
+                                                    {priceLabel(item.price)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {:else}
+                                    <a
+                                        href="/app/pathway/{data.pathwayId.toLowerCase()}/shop/{item.id}"
+                                        class="item-card"
+                                    >
+                                        <div class="item-image">
+                                            {#if item.itemImageUrl}
+                                                <img src={item.itemImageUrl} alt={item.name} />
+                                            {:else}
+                                                <div class="item-image-placeholder">No image</div>
                                             {/if}
                                         </div>
-                                    </div>
-                                </a>
+                                        <div class="item-body">
+                                            <div class="item-top">
+                                                <h3>{item.name}</h3>
+                                            </div>
+                                            <p class="item-desc">{item.description}</p>
+                                            <div class="item-foot">
+                                                <span class="price" class:price-low={cantAfford}>
+                                                    {priceLabel(item.price)}
+                                                </span>
+                                                {#if item.stock !== null}
+                                                    <span class="stock">{item.stock} left</span>
+                                                {/if}
+                                            </div>
+                                        </div>
+                                    </a>
+                                {/if}
                             {/if}
                         {/each}
                     </div>

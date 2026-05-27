@@ -200,10 +200,10 @@ export const shopOrder = pgTable('shop_orders', {
   shippingAddress: jsonb('shipping_address').$type<AddressInput>(),
   phone: text('phone'),
   userNotes: text('user_notes'),
-  fufillerNotes: text('fufiller_notes'),
+  fulfillerNotes: text('fulfiller_notes'),
   // claimedBy: 
-  fufilledBy: text('fufilled_by').references(() => user.id, { onDelete: 'set null' }),
-  fufilledAt: timestamp('fufilled_at', { mode: 'date' }),
+  fulfilledBy: text('fulfilled_by').references(() => user.id, { onDelete: 'set null' }),
+  fulfilledAt: timestamp('fulfilled_at', { mode: 'date' }),
   // Populated by the warehouse fulfillment flow when a label is created.
   // Mirrors warehouseOrder.trackingNumber so the participant can see it on
   // their order without needing access to the warehouse tables.
@@ -211,7 +211,7 @@ export const shopOrder = pgTable('shop_orders', {
   cancelledReason: text('cancelled_reason'),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow().$onUpdate(() => new Date()),
-})
+});
 
 // Relations
 export const userRelations = relations(user, ({ many }) => ({
@@ -404,7 +404,7 @@ export const warehouseOrder = pgTable('warehouse_order', {
 	fulfillmentId: integer('fulfillment_id').generatedAlwaysAsIdentity().unique(),
 	createdById: text('created_by_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
 	// Back reference to the originating shop order, set when a warehouse
-	// order is created via the shop fufill flow. Null for warehouse orders
+	// order is created via the shop fulfill flow. Null for warehouse orders
 	// created directly (admin or ambassador swag). On shipping success the
 	// fulfillment endpoint flips the linked shop order to FULFILLED and
 	// copies trackingNumber across so the participant can see it.
@@ -582,7 +582,7 @@ export const shopOrderRelations = relations(shopOrder, ({ one }) => ({
   user: one(user, { fields: [shopOrder.userId], references: [user.id] }),
   shop: one(pathwayShop, { fields: [shopOrder.pathway], references: [pathwayShop.pathway] }),
   item: one(shopItem, { fields: [shopOrder.item], references: [shopItem.id] }),
-  fufiller: one(user, { fields: [shopOrder.fufilledBy], references: [user.id] }),
+  fulfiller: one(user, { fields: [shopOrder.fulfilledBy], references: [user.id] }),
   warehouseOrder: one(warehouseOrder, { fields: [shopOrder.id], references: [warehouseOrder.shopOrderId] })
 }));
 
