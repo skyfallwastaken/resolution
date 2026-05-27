@@ -153,7 +153,6 @@ export const POST: RequestHandler = async (event) => {
 		throw error(409, 'Order has already been shipped or is not in APPROVED status');
 	}
 
-	try {
 	// Total weight always comes from items. Dimensions come from the packaging
 	// record chosen at estimate time so the carrier request matches the quote.
 	// Fall back to item-derived dims for legacy orders without packaging info.
@@ -366,20 +365,4 @@ export const POST: RequestHandler = async (event) => {
 		packingSlipBase64,
 		shippingMethod
 	});
-	} catch (e) {
-		try {
-			await db.update(warehouseOrder)
-				.set({ status: 'APPROVED', updatedAt: new Date() })
-				.where(and(
-					eq(warehouseOrder.id, orderId),
-					eq(warehouseOrder.status, 'SHIPPED')
-				));
-		} catch (rollbackError) {
-			console.error('Failed to roll back warehouse order status after shipment error', {
-				orderId,
-				rollbackError
-			});
-		}
-		throw e;
-	}
 };
