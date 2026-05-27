@@ -1,10 +1,11 @@
 import { env } from '$env/dynamic/private';
 import { createSign } from 'crypto';
-import { requireAdminOrAmbassador, requireAuth } from '$lib/server/auth/guard';
+import { error } from '@sveltejs/kit';
+import { requireAdminOrAmbassador } from '$lib/server/auth/guard';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
-	requireAdminOrAmbassador(event);
+	await requireAdminOrAmbassador(event); // don't forget to actually check what requireAdminOrAmbassador(event); returns next time
 
 	const toSign = await event.request.text();
 
