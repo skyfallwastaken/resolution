@@ -9,6 +9,14 @@
 	let statusFilter = $state<StatusFilter>('all');
 	let pathwayFilter = $state<string>('all');
 
+	const STATUS_OPTIONS: ReadonlyArray<[StatusFilter, string]> = [
+		['all', 'All'],
+		['pending', 'Pending'],
+		['submitted', 'Submitted'],
+		['rejected', 'Rejected'],
+		['fixed', 'Fixed']
+	];
+
 	function statusOf(s: typeof data.submissions[number]): Exclude<StatusFilter, 'all'> {
 		if (s.isRejected && s.fixed) return 'fixed';
 		if (s.isRejected) return 'rejected';
@@ -61,7 +69,7 @@
 				<div class="filter-group">
 					<span class="filter-label">Status</span>
 					<div class="pills">
-						{#each [['all', 'All'], ['pending', 'Pending'], ['submitted', 'Submitted'], ['rejected', 'Rejected'], ['fixed', 'Fixed']] as const as [value, label]}
+						{#each STATUS_OPTIONS as [value, label]}
 							<button
 								type="button"
 								class="pill"

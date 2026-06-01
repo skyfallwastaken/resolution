@@ -1,9 +1,12 @@
 import { env } from '$env/dynamic/private';
 import { dev } from '$app/environment';
 import Airtable from 'airtable';
+import { z } from 'zod';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { requireAuth } from '$lib/server/auth/guard';
+
+const emailSchema = z.string().email().max(254);
 
 const SAMPLE_SUBMISSIONS = [
 	{
@@ -97,8 +100,11 @@ export const load: PageServerLoad = async (event) => {
 
     if (!env.AIRTABLE_API_TOKEN || !env.AIRTABLE_BASE_ID || !env.AIRTABLE_YSWS_TABLE_ID) throw error(500, 'Server configuration error');
 
+    const parsedEmail = emailSchema.safeParse(user.email);
+    if (!parsedEmail.success) throw error(400, 'Invalid user email');
+
     try {
-        const escaped = user.email.replace(/"/g, '\\"');
+        const escaped = parsedEmail.data.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         const filterByFormula = `LOWER({Email}) = "${escaped.toLowerCase()}"`;
 
         const base = new Airtable({ apiKey: env.AIRTABLE_API_TOKEN }).base(env.AIRTABLE_BASE_ID);
