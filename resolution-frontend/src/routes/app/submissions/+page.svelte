@@ -1,8 +1,9 @@
 <script lang="ts">
+	import type { PageData } from './$types';
 	import PlatformBackground from '$lib/components/PlatformBackground.svelte';
 	import { PATHWAYS, PATHWAY_INFO } from '$lib/pathways';
 
-	let { data } = $props();
+	let { data }: { data: PageData } = $props();
 
 	type StatusFilter = 'all' | 'pending' | 'submitted' | 'rejected' | 'fixed';
 
