@@ -158,12 +158,12 @@
 
 						<div class="submission-body">
 							{#if submission.screenshotUrl}
-								<a
-									href={submission.screenshotUrl}
-									target="_blank"
-									rel="noopener"
-									class="screenshot-link"
-								>
+							<a
+								href={submission.screenshotUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="screenshot-link"
+							>
 									<img
 										src={submission.screenshotUrl}
 										alt="Project screenshot"
@@ -183,11 +183,12 @@
 								{/if}
 
 								<div class="links">
+								<div class="links">
 									{#if submission.codeUrl}
-										<a href={submission.codeUrl} target="_blank" rel="noopener">Code</a>
+										<a href={submission.codeUrl} target="_blank" rel="noopener noreferrer">Code</a>
 									{/if}
 									{#if submission.playableUrl}
-										<a href={submission.playableUrl} target="_blank" rel="noopener">Playable</a>
+										<a href={submission.playableUrl} target="_blank" rel="noopener noreferrer">Playable</a>
 									{/if}
 								</div>
 							</div>
@@ -200,7 +201,7 @@
 									<a
 										href="https://github.com/{submission.githubUsername}"
 										target="_blank"
-										rel="noopener">@{submission.githubUsername}</a
+										rel="noopener noreferrer">@{submission.githubUsername}</a
 									>
 								</span>
 							{/if}
