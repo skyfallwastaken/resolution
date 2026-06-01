@@ -59,6 +59,7 @@
 					<a href="/app/warehouse-backend" class="warehouse-backend-btn">Warehouse Backend</a>
 					<a href="/app/admin" class="admin-btn">Admin</a>
 				{/if}
+				<a href="/app/submissions" class="submission-btn">Submissions</a>
 				<form method="POST" action="/api/auth/logout">
 					<button type="submit">Sign out</button>
 				</form>
@@ -197,7 +198,8 @@
 	.ambassador-btn,
 	.warehouse-btn,
 	.warehouse-backend-btn,
-	.reviewer-btn {
+	.reviewer-btn,
+	.submission-btn {
 		padding: 0.5rem 1rem;
 		background: rgba(255, 255, 255, 0.8);
 		border-radius: 20px;
@@ -230,11 +232,17 @@
 		color: #ff8c37;
 	}
 
+	.submission-btn {
+		border: 1px solid #33d6a6;
+		color: #33d6a6;
+	}
+
 	.admin-btn:hover,
 	.ambassador-btn:hover,
 	.warehouse-btn:hover,
 	.warehouse-backend-btn:hover,
-	.reviewer-btn:hover {
+	.reviewer-btn:hover,
+	.submission-btn:hover {
 		background: rgba(255, 255, 255, 1);
 	}
 
