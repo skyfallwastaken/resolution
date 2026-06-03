@@ -183,7 +183,6 @@
 								{/if}
 
 								<div class="links">
-								<div class="links">
 									{#if submission.codeUrl}
 										<a href={submission.codeUrl} target="_blank" rel="noopener noreferrer">Code</a>
 									{/if}
@@ -201,8 +200,7 @@
 									<a
 										href="https://github.com/{submission.githubUsername}"
 										target="_blank"
-										rel="noopener noreferrer">@{submission.githubUsername}</a
-									>
+										rel="noopener noreferrer">@{submission.githubUsername}</a>
 								</span>
 							{/if}
 							{#if submission.hackatimeProject}
