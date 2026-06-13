@@ -8,14 +8,9 @@
 
 	const pathways = PATHWAYS;
 
-	let selectedPathways = $state<string[]>([]);
-	let isEditing = $state(true);
+	let selectedPathways = $state<string[]>([...data.selectedPathways]);
+	let isEditing = $state(data.selectedPathways.length === 0);
 	let isSaving = $state(false);
-
-	$effect(() => {
-		selectedPathways = [...data.selectedPathways];
-		isEditing = data.selectedPathways.length === 0;
-	});
 
 	function togglePathway(id: string) {
 		if (!isEditing) return;
