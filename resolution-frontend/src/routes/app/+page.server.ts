@@ -2,11 +2,14 @@ import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
 import { userPathway, ambassadorPathway, reviewerPathway } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { fail } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import { PATHWAY_IDS, type PathwayId } from '$lib/pathways';
 
-export const load: PageServerLoad = async ({ parent }) => {
-	const { user, season, enrollment } = await parent();
+export const load: PageServerLoad = async ({ locals }) => {
+	const user = locals.user;
+	if (!user) {
+		throw error(401, 'Unauthorized');
+	}
 
 	const [pathways, ambassadorCheck, reviewerCheck] = await Promise.all([
 		db
@@ -26,9 +29,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 	]);
 
 	return {
-		user,
-		season,
-		enrollment,
 		selectedPathways: pathways.map((p) => p.pathway),
 		isAmbassador: ambassadorCheck.length > 0,
 		isReviewer: reviewerCheck.length > 0
