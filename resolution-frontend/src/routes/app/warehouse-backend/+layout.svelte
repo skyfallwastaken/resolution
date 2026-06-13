@@ -12,6 +12,7 @@
 
 <svelte:head>
 	<title>Warehouse Backend - Resolution</title>
+	<link rel="stylesheet" href="https://css.hackclub.com/fonts.css" />
 </svelte:head>
 
 <div class="warehouse-container">

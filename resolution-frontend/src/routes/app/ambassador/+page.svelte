@@ -24,6 +24,7 @@
 
 <svelte:head>
 	<title>Ambassador Dashboard - Resolution</title>
+	<link rel="stylesheet" href="https://css.hackclub.com/fonts.css" />
 </svelte:head>
 
 <PlatformBackground>

@@ -1,5 +1,11 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
+	// Self-hosted fonts (replaces Google Fonts external critical-path requests)
+	import '@fontsource/kodchasan/latin-400.css';
+	import '@fontsource/kodchasan/latin-500.css';
+	import '@fontsource/kodchasan/latin-600.css';
+	import '@fontsource/kodchasan/latin-700.css';
+	import '@fontsource/patrick-hand/latin-400.css';
 	import '$lib/styles/tokens.css';
 	import '$lib/styles/utilities.css';
 	import '../app.css';

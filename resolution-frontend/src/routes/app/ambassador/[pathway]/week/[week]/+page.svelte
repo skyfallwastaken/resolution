@@ -161,6 +161,7 @@
 
 <svelte:head>
 	<title>Edit Week {data.weekNumber} - {pathway.label} - Resolution</title>
+	<link rel="stylesheet" href="https://css.hackclub.com/fonts.css" />
 </svelte:head>
 
 <div class="editor-container">

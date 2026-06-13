@@ -17,6 +17,7 @@
 
 <svelte:head>
 	<title>Warehouse - Resolution</title>
+	<link rel="stylesheet" href="https://css.hackclub.com/fonts.css" />
 </svelte:head>
 
 <PlatformBackground>

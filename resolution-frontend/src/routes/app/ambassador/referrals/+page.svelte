@@ -56,6 +56,7 @@
 
 <svelte:head>
 	<title>Referral Links - Resolution</title>
+	<link rel="stylesheet" href="https://css.hackclub.com/fonts.css" />
 </svelte:head>
 
 <div class="referrals-container">
