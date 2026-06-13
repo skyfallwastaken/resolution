@@ -110,7 +110,7 @@
 	.resolution-paper {
 		position: absolute;
 		inset: 0;
-		background-image: url("$lib/assets/resolution_paper.webp");
+		background-image: url("$lib/assets/resolution_paper.avif");
 		background-size: cover;
 		background-position: center;
 		background-repeat: no-repeat;
