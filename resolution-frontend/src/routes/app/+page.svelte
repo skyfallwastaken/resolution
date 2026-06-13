@@ -320,6 +320,7 @@
 		font-size: 1.1rem;
 		font-weight: 600;
 		color: #1a1a2e;
+		text-align: center;
 	}
 
 	.check-badge {
@@ -370,5 +371,30 @@
 		border-color: #8492a6;
 		color: #8492a6;
 		padding: 0.75rem 2rem;
+	}
+
+	@media (max-width: 768px) {
+		.app-container {
+			padding: 1.25rem;
+		}
+
+		header {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 1rem;
+		}
+
+		.header-actions {
+			flex-wrap: wrap;
+		}
+
+		.options-grid {
+			grid-template-columns: repeat(2, 1fr);
+			gap: 1rem;
+		}
+
+		.option-card {
+			padding: 1.75rem 1rem;
+		}
 	}
 </style>

@@ -513,9 +513,21 @@
 			right: 0;
 		}
 
+		/* The hero art is too short on mobile to overlay 4 lines of copy + the
+		   CTA, and overflow:hidden was clipping the button. Drop the content into
+		   normal flow below the art on a matching dark backdrop. */
+		.hero {
+			overflow: visible;
+			background: #15123a;
+		}
+
 		.hero-content {
-			top: 55%;
-			max-width: 90%;
+			position: static;
+			transform: none;
+			width: 90%;
+			max-width: 560px;
+			margin: 0 auto;
+			padding: 1.5rem 0 2.5rem;
 		}
 
 		.step {
@@ -549,6 +561,7 @@
 			flex-direction: column;
 			left: 5%;
 			width: 90%;
+			transform: none;
 		}
 
 		.faq-list {
