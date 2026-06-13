@@ -4,6 +4,7 @@
 	import { deserialize, enhance } from '$app/forms';
 	import { onMount } from 'svelte';
 	import SvelteMarkdown from 'svelte-marked';
+	import Icon from '$lib/components/Icon.svelte';
 
 	import { PATHWAY_INFO } from '$lib/pathways';
 
@@ -167,7 +168,7 @@
 <div class="editor-container">
 		<header>
 			<a href="/app/ambassador" class="back-link">
-				<img src="https://icons.hackclub.com/api/icons/8492a6/back" alt="Back" width="20" height="20" />
+				<Icon icon="back" alt="Back" size={20} />
 				Back to Dashboard
 			</a>
 			<div class="header-content">

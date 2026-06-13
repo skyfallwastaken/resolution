@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import PlatformBackground from '$lib/components/PlatformBackground.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 
 	import { PATHWAY_INFO, PATHWAY_IDS } from '$lib/pathways';
 
@@ -145,7 +146,7 @@
 <PlatformBackground>
 	<div class="reviewer-container">
 		<a href="/app" class="back-link">
-			<img src="https://icons.hackclub.com/api/icons/8492a6/back" alt="Back" width="20" height="20" />
+			<Icon icon="back" alt="Back" size={20} />
 			Back to Dashboard
 		</a>
 
@@ -167,7 +168,7 @@
 
 		{#if errorMessage}
 			<div class="error-banner">
-				<img src="https://icons.hackclub.com/api/icons/ec3750/important" alt="Error" width="18" height="18" />
+				<Icon icon="important" color="ec3750" alt="Error" size={18} />
 				{errorMessage}
 			</div>
 		{/if}
@@ -178,7 +179,7 @@
 			</div>
 		{:else if submissions.length === 0}
 			<div class="empty-state">
-				<img src="https://icons.hackclub.com/api/icons/8492a6/checkmark" alt="All clear" width="48" height="48" />
+				<Icon icon="checkmark" alt="All clear" size={48} />
 				<p>No pending submissions</p>
 				<p class="hint">All caught up! Check back later.</p>
 			</div>
@@ -198,26 +199,26 @@
 
 						<div class="card-meta">
 							<span class="email-label">
-								<img src="https://icons.hackclub.com/api/icons/8492a6/email" alt="Email" width="16" height="16" />
+								<Icon icon="email" alt="Email" size={16} />
 								{submission.email}
 							</span>
 							<span class="week-label">
-								<img src="https://icons.hackclub.com/api/icons/8492a6/event-code" alt="Week" width="16" height="16" />
+								<Icon icon="event-code" alt="Week" size={16} />
 								Week {submission.week}
 							</span>
 							<span class="date-label">
-								<img src="https://icons.hackclub.com/api/icons/8492a6/clock" alt="Date" width="16" height="16" />
+								<Icon icon="clock" alt="Date" size={16} />
 								{new Date(submission.submittedAt).toLocaleDateString()}
 							</span>
 							{#if submission.hoursSpent != null}
 								<span class="hours-label">
-									<img src="https://icons.hackclub.com/api/icons/8492a6/clock" alt="Hours" width="16" height="16" />
+									<Icon icon="clock" alt="Hours" size={16} />
 									{submission.hoursSpent}h reported
 								</span>
 							{/if}
 							{#if isValidSlackId(submission.slackId)}
 								<span class="slack-label">
-									<img src="https://icons.hackclub.com/api/icons/8492a6/slack-fill" alt="Slack ID" width="16" height="16" />
+									<Icon icon="slack-fill" alt="Slack ID" size={16} />
 									<a
 										href="https://hackclub.enterprise.slack.com/team/{submission.slackId}"
 										target="_blank"
@@ -235,16 +236,16 @@
 
 						<div class="card-links">
 							<a href={submission.codeUrl} target="_blank" rel="noopener noreferrer" class="link-btn">
-								<img src="https://icons.hackclub.com/api/icons/338eda/code" alt="Code" width="16" height="16" />
+								<Icon icon="code" color="338eda" alt="Code" size={16} />
 								Code
 							</a>
 							<a href={submission.playableUrl} target="_blank" rel="noopener noreferrer" class="link-btn">
-								<img src="https://icons.hackclub.com/api/icons/338eda/external" alt="Demo" width="16" height="16" />
+								<Icon icon="external" color="338eda" alt="Demo" size={16} />
 								Demo
 							</a>
 							{#if submission.hackatimeProject}
 								<span class="hackatime-label">
-									<img src="https://icons.hackclub.com/api/icons/8492a6/clock" alt="Hackatime" width="16" height="16" />
+									<Icon icon="clock" alt="Hackatime" size={16} />
 									{submission.hackatimeProject}
 								</span>
 							{/if}
@@ -252,11 +253,11 @@
 
 						<div class="card-actions">
 							<button class="approve-btn" onclick={() => openApprove(submission)}>
-								<img src="https://icons.hackclub.com/api/icons/ffffff/checkmark" alt="Approve" width="16" height="16" />
+								<Icon icon="checkmark" color="ffffff" alt="Approve" size={16} />
 								Approve
 							</button>
 							<button class="reject-btn" onclick={() => openReject(submission)}>
-								<img src="https://icons.hackclub.com/api/icons/ffffff/delete" alt="Reject" width="16" height="16" />
+								<Icon icon="delete" color="ffffff" alt="Reject" size={16} />
 								Reject
 							</button>
 						</div>
