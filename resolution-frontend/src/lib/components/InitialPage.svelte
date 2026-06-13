@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { Step, FAQ } from '$lib/types';
-	import heroBg from '$lib/assets/hero_bg.png';
-	import darkBg from '$lib/assets/dark_bg.png';
-	import swirlBg from '$lib/assets/swirl_overlay.png';
-	import lightBlueBg from '$lib/assets/light_blue_bg.png';
-	import fireworks from '$lib/assets/firework_burst.png';
-	import fireworksGif from '$lib/assets/fireworks_gif.png';
-	import sparklyBorder from '$lib/assets/gold_glitter_border.png';
+	import heroBg from '$lib/assets/hero_bg.webp';
+	import darkBg from '$lib/assets/dark_bg.webp';
+	import swirlBg from '$lib/assets/swirl_overlay.webp';
+	import lightBlueBg from '$lib/assets/light_blue_bg.webp';
+	import fireworks from '$lib/assets/firework_burst.webp';
+	import fireworksGif from '$lib/assets/fireworks_gif.webp';
+	import sparklyBorder from '$lib/assets/gold_glitter_border.webp';
 	import vectorLine from '$lib/assets/vector_divider.svg';
 
 

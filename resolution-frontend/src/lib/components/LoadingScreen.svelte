@@ -27,7 +27,7 @@
 </script>
 
 <div class="loading-container">
-  <img src="/loading-bg.png" alt="" class="background" />
+  <img src="/loading-bg.webp" alt="" class="background" />
   
   <div class="progress-wrapper">
     <div class="progress-bar">

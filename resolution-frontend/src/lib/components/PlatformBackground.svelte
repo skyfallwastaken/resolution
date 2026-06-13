@@ -8,8 +8,8 @@
 
 <div class="platform-bg">
   <div class="bg-scroll">
-    <img src="/platform-bg.png" alt="" class="bg-image" />
-    <img src="/platform-bg.png" alt="" class="bg-image" />
+    <img src="/platform-bg.webp" alt="" class="bg-image" />
+    <img src="/platform-bg.webp" alt="" class="bg-image" />
   </div>
 
 
