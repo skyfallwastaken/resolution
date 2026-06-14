@@ -8,14 +8,15 @@
   let { children }: Props = $props();
 </script>
 
+<svelte:head>
+  <link rel="preload" as="image" href={platformBg} fetchpriority="high" />
+</svelte:head>
+
 <div class="platform-bg">
   <div class="bg-scroll">
-    <img src={platformBg} alt="" class="bg-image" />
-    <img src={platformBg} alt="" class="bg-image" />
+    <img src={platformBg} alt="" class="bg-image" fetchpriority="high" />
   </div>
 
-
-  
   <div class="content">
     {@render children?.()}
   </div>
@@ -52,26 +53,5 @@
     min-height: 100vh;
     height: 100%;
     overflow-y: auto;
-  }
-
-  @keyframes pan {
-    0%, 100% {
-      transform: translateX(0);
-    }
-    25% {
-      transform: translateX(-2%);
-    }
-    75% {
-      transform: translateX(2%);
-    }
-  }
-
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-15px);
-    }
   }
 </style>
