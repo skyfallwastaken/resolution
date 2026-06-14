@@ -3,6 +3,7 @@ import type { LayoutServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { programSeason, programEnrollment } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { timed } from '$lib/server/timing';
 
 const ACTIVE_SEASON_CACHE_MS = 60_000;
 let activeSeasonCache: typeof programSeason.$inferSelect | null = null;
@@ -25,16 +26,22 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		throw redirect(302, '/api/auth/login');
 	}
 
-	const activeSeason = await getCachedActiveSeason();
+	const activeSeason = await timed(locals, 'season', getCachedActiveSeason, 'active season (cached)');
 
 	const enrollment = activeSeason
-		? await db.query.programEnrollment.findFirst({
-				where: and(
-					eq(programEnrollment.userId, locals.user.id),
-					eq(programEnrollment.seasonId, activeSeason.id),
-					eq(programEnrollment.status, 'ACTIVE')
-				)
-			})
+		? await timed(
+				locals,
+				'enrollment',
+				() =>
+					db.query.programEnrollment.findFirst({
+						where: and(
+							eq(programEnrollment.userId, locals.user!.id),
+							eq(programEnrollment.seasonId, activeSeason.id),
+							eq(programEnrollment.status, 'ACTIVE')
+						)
+					}),
+				'enrollment lookup'
+			)
 		: null;
 
 	return {

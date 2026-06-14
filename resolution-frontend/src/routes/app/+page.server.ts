@@ -4,6 +4,7 @@ import { userPathway, ambassadorPathway, reviewerPathway } from '$lib/server/db/
 import { eq } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import { PATHWAY_IDS, type PathwayId } from '$lib/pathways';
+import { timed } from '$lib/server/timing';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -11,22 +12,28 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw error(401, 'Unauthorized');
 	}
 
-	const [pathways, ambassadorCheck, reviewerCheck] = await Promise.all([
-		db
-			.select({ pathway: userPathway.pathway })
-			.from(userPathway)
-			.where(eq(userPathway.userId, user.id)),
-		db
-			.select({ userId: ambassadorPathway.userId })
-			.from(ambassadorPathway)
-			.where(eq(ambassadorPathway.userId, user.id))
-			.limit(1),
-		db
-			.select({ userId: reviewerPathway.userId })
-			.from(reviewerPathway)
-			.where(eq(reviewerPathway.userId, user.id))
-			.limit(1)
-	]);
+	const [pathways, ambassadorCheck, reviewerCheck] = await timed(
+		locals,
+		'page-queries',
+		() =>
+			Promise.all([
+				db
+					.select({ pathway: userPathway.pathway })
+					.from(userPathway)
+					.where(eq(userPathway.userId, user.id)),
+				db
+					.select({ userId: ambassadorPathway.userId })
+					.from(ambassadorPathway)
+					.where(eq(ambassadorPathway.userId, user.id))
+					.limit(1),
+				db
+					.select({ userId: reviewerPathway.userId })
+					.from(reviewerPathway)
+					.where(eq(reviewerPathway.userId, user.id))
+					.limit(1)
+			]),
+		'pathways + ambassador + reviewer (parallel)'
+	);
 
 	return {
 		selectedPathways: pathways.map((p) => p.pathway),
