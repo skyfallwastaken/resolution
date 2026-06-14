@@ -50,7 +50,7 @@
   const w = $derived(toLen(width, size));
   const h = $derived(toLen(height, size));
   const fill = $derived(normColor(color));
-  const maskUrl = $derived(iconUrls[icon]);
+  const maskValue = $derived(`url("${iconUrls[icon]}")`);
 </script>
 
 <span
@@ -58,7 +58,7 @@
   role={alt ? "img" : undefined}
   aria-label={alt || undefined}
   aria-hidden={alt ? undefined : "true"}
-  style="--hc-w:{w}; --hc-h:{h}; --hc-color:{fill}; --hc-mask:url('{maskUrl}'); {style}"
+  style="--hc-w:{w}; --hc-h:{h}; --hc-color:{fill}; --hc-mask:{maskValue}; {style}"
 ></span>
 
 <style>
