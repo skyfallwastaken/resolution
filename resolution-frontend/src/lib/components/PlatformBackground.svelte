@@ -1,4 +1,6 @@
 <script lang="ts">
+  import platformBg from '$lib/assets/platform-bg.avif';
+
   interface Props {
     children?: import('svelte').Snippet;
   }
@@ -8,8 +10,8 @@
 
 <div class="platform-bg">
   <div class="bg-scroll">
-    <img src="/platform-bg.avif" alt="" class="bg-image" />
-    <img src="/platform-bg.avif" alt="" class="bg-image" />
+    <img src={platformBg} alt="" class="bg-image" />
+    <img src={platformBg} alt="" class="bg-image" />
   </div>
 
 
