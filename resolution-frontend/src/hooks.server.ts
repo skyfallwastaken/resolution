@@ -27,6 +27,14 @@ export const handle: Handle = async ({ event, resolve }) => {
       marks.push({ name: 'cold', dur: Date.now() - instanceBootedAt, desc: 'first request on instance' });
     }
     response.headers.set('Server-Timing', serializeTimings(marks));
+    // Cloudflare strips our Server-Timing header (replaces it with cf* metrics),
+    // so also log it — visible in Vercel runtime logs, bypassing CF entirely.
+    console.log(
+      `[timing] ${event.request.method} ${event.url.pathname}` +
+        (isColdStart ? ' COLD' : '') +
+        ' | ' +
+        marks.map((m) => `${m.name}=${m.dur.toFixed(1)}ms`).join(' ')
+    );
     return response;
   };
 
