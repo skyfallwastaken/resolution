@@ -66,7 +66,13 @@ export const GET: RequestHandler = async (event) => {
 					'Pathway',
 					'Week',
 					'Screenshot',
-					'Optional - Override Hours Spent'
+					'Optional - Override Hours Spent',
+					'Address (Line 1)',
+					'Address (Line 2)',
+					'City',
+					'State / Province',
+					'Country',
+					'ZIP / Postal Code'
 				]
 			})
 			.all();
@@ -108,7 +114,15 @@ export const GET: RequestHandler = async (event) => {
 				week: record.get('Week') as number,
 				screenshotUrl: (record.get('Screenshot') as Array<{ url: string }> | undefined)?.[0]?.url ?? null,
 				hoursSpent: (record.get('Optional - Override Hours Spent') as number | undefined) ?? null,
-				submittedAt: record._rawJson.createdTime as string
+				submittedAt: record._rawJson.createdTime as string,
+				address: {
+					line1: (record.get('Address (Line 1)') as string | undefined) ?? null,
+					line2: (record.get('Address (Line 2)') as string | undefined) ?? null,
+					city: (record.get('City') as string | undefined) ?? null,
+					stateProvince: (record.get('State / Province') as string | undefined) ?? null,
+					country: (record.get('Country') as string | undefined) ?? null,
+					zipPostalCode: (record.get('ZIP / Postal Code') as string | undefined) ?? null
+				}
 			};
 		});
 

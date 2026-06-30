@@ -23,6 +23,14 @@
 		hoursSpent: number | null;
 		submittedAt: string;
 		slackId: string | null;
+		address: {
+			line1: string | null;
+			line2: string | null;
+			city: string | null;
+			stateProvince: string | null;
+			country: string | null;
+			zipPostalCode: string | null;
+		};
 	}
 
 	const pathwayInfo = PATHWAY_INFO;
@@ -34,6 +42,16 @@
 	let isLoading = $state(true);
 	let errorMessage = $state('');
 	let pathwayFilter = $state('');
+	let weekFilter = $state('');
+	let expandedAddress = $state<string | null>(null);
+
+	const availableWeeks = $derived(
+		Array.from(new Set(submissions.map(s => s.week).filter(w => w != null))).sort((a, b) => a - b)
+	);
+
+	const visibleSubmissions = $derived(
+		weekFilter ? submissions.filter(s => String(s.week) === weekFilter) : submissions
+	);
 
 	let approveModal = $state<Submission | null>(null);
 	let rejectModal = $state<Submission | null>(null);
@@ -137,6 +155,21 @@
 	function isValidSlackId(id: string | null): id is string {
 		return typeof id === 'string' && /^[A-Z0-9]+$/.test(id);
 	}
+
+	function hasAddress(address: Submission['address']): boolean {
+		return Object.values(address).some(v => typeof v === 'string' && v.trim().length > 0);
+	}
+
+	function formatAddress(address: Submission['address']): string {
+		const parts = [
+			address.line1,
+			address.line2,
+			[address.city, address.stateProvince].filter(Boolean).join(', '),
+			address.zipPostalCode,
+			address.country
+		];
+		return parts.filter(p => typeof p === 'string' && p.trim().length > 0).join('\n');
+	}
 </script>
 
 <svelte:head>
@@ -156,14 +189,25 @@
 		</header>
 
 		<div class="filter-bar">
-			<label for="pathway-filter" class="filter-label">Filter by pathway</label>
-			<select id="pathway-filter" bind:value={pathwayFilter} class="filter-select">
-				<option value="">All Pathways</option>
-				{#each availablePathways as pw}
-					{@const info = pathwayInfo[pw]}
-					<option value={pw}>{info?.label ?? pw}</option>
-				{/each}
-			</select>
+			<div class="filter-group">
+				<label for="pathway-filter" class="filter-label">Filter by pathway</label>
+				<select id="pathway-filter" bind:value={pathwayFilter} class="filter-select">
+					<option value="">All Pathways</option>
+					{#each availablePathways as pw}
+						{@const info = pathwayInfo[pw]}
+						<option value={pw}>{info?.label ?? pw}</option>
+					{/each}
+				</select>
+			</div>
+			<div class="filter-group">
+				<label for="week-filter" class="filter-label">Filter by week</label>
+				<select id="week-filter" bind:value={weekFilter} class="filter-select">
+					<option value="">All Weeks</option>
+					{#each availableWeeks as wk}
+						<option value={String(wk)}>Week {wk}</option>
+					{/each}
+				</select>
+			</div>
 		</div>
 
 		{#if errorMessage}
@@ -177,7 +221,7 @@
 			<div class="loading-state">
 				<p>Loading submissions…</p>
 			</div>
-		{:else if submissions.length === 0}
+		{:else if visibleSubmissions.length === 0}
 			<div class="empty-state">
 				<Icon icon="checkmark" alt="All clear" size={48} />
 				<p>No pending submissions</p>
@@ -185,7 +229,7 @@
 			</div>
 		{:else}
 			<div class="submissions-grid">
-				{#each submissions as submission (submission.id)}
+				{#each visibleSubmissions as submission (submission.id)}
 					{@const info = pathwayInfo[submission.pathway]}
 					<div class="submission-card">
 						<div class="card-header">
@@ -249,7 +293,21 @@
 									{submission.hackatimeProject}
 								</span>
 							{/if}
+							{#if hasAddress(submission.address)}
+								<button
+									type="button"
+									class="link-btn address-btn"
+									onclick={() => expandedAddress = expandedAddress === submission.id ? null : submission.id}
+								>
+									<Icon icon="home" color="338eda" alt="Address" size={16} />
+									{expandedAddress === submission.id ? 'Hide address' : 'View address'}
+								</button>
+							{/if}
 						</div>
+
+						{#if expandedAddress === submission.id}
+							<pre class="address-block">{formatAddress(submission.address)}</pre>
+						{/if}
 
 						<div class="card-actions">
 							<button class="approve-btn" onclick={() => openApprove(submission)}>
@@ -363,9 +421,16 @@
 
 	.filter-bar {
 		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: 1.5rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.filter-group {
+		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		margin-bottom: 1.5rem;
 	}
 
 	.filter-label {
@@ -469,7 +534,8 @@
 
 	.card-meta {
 		display: flex;
-		gap: 1rem;
+		flex-wrap: wrap;
+		gap: 0.5rem 1rem;
 		font-size: 0.8rem;
 		color: #8492a6;
 	}
@@ -478,6 +544,12 @@
 		display: flex;
 		align-items: center;
 		gap: 0.25rem;
+		min-width: 0;
+	}
+
+	.email-label {
+		overflow-wrap: anywhere;
+		word-break: break-word;
 	}
 
 	.slack-label a {
@@ -535,6 +607,25 @@
 		gap: 0.375rem;
 		font-size: 0.8rem;
 		color: #8492a6;
+	}
+
+	.address-btn {
+		cursor: pointer;
+		font-weight: 600;
+	}
+
+	.address-block {
+		margin: 0;
+		padding: 0.75rem 1rem;
+		background: rgba(175, 152, 255, 0.08);
+		border: 1px solid #af98ff;
+		border-radius: 8px;
+		font-family: 'Kodchasan', sans-serif;
+		font-size: 0.8rem;
+		line-height: 1.5;
+		color: #1a1a2e;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 	}
 
 	.card-actions {
