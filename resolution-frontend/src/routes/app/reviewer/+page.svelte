@@ -23,7 +23,8 @@
 		hoursSpent: number | null;
 		submittedAt: string;
 		slackId: string | null;
-		address: {
+		status: 'pending' | 'approved' | 'rejected';
+		address?: {
 			line1: string | null;
 			line2: string | null;
 			city: string | null;
@@ -43,7 +44,14 @@
 	let errorMessage = $state('');
 	let pathwayFilter = $state('');
 	let weekFilter = $state('');
+	let statusFilter = $state('pending');
 	let expandedAddress = $state<string | null>(null);
+
+	const STATUS_LABELS: Record<string, string> = {
+		pending: 'Pending',
+		approved: 'Approved',
+		rejected: 'Rejected'
+	};
 
 	const availableWeeks = $derived(
 		Array.from(new Set(submissions.map(s => s.week).filter(w => w != null))).sort((a, b) => a - b)
@@ -61,14 +69,18 @@
 	let isActionLoading = $state(false);
 
 	$effect(() => {
-		fetchSubmissions(pathwayFilter);
+		fetchSubmissions(pathwayFilter, statusFilter);
 	});
 
-	async function fetchSubmissions(pathway: string) {
+	async function fetchSubmissions(pathway: string, status: string) {
 		isLoading = true;
 		errorMessage = '';
 		try {
-			const url = pathway ? `/api/review/submissions?pathway=${pathway}` : '/api/review/submissions';
+			const params = new URLSearchParams();
+			if (pathway) params.set('pathway', pathway);
+			if (status) params.set('status', status);
+			const query = params.toString();
+			const url = query ? `/api/review/submissions?${query}` : '/api/review/submissions';
 			const res = await fetch(url);
 			if (!res.ok) {
 				const result = await res.json();
@@ -156,11 +168,11 @@
 		return typeof id === 'string' && /^[A-Z0-9]+$/.test(id);
 	}
 
-	function hasAddress(address: Submission['address']): boolean {
-		return Object.values(address).some(v => typeof v === 'string' && v.trim().length > 0);
+	function hasAddress(address: Submission['address']): address is NonNullable<Submission['address']> {
+		return !!address && Object.values(address).some(v => typeof v === 'string' && v.trim().length > 0);
 	}
 
-	function formatAddress(address: Submission['address']): string {
+	function formatAddress(address: NonNullable<Submission['address']>): string {
 		const parts = [
 			address.line1,
 			address.line2,
@@ -208,6 +220,15 @@
 					{/each}
 				</select>
 			</div>
+			<div class="filter-group">
+				<label for="status-filter" class="filter-label">Filter by status</label>
+				<select id="status-filter" bind:value={statusFilter} class="filter-select">
+					<option value="pending">Pending</option>
+					<option value="approved">Approved</option>
+					<option value="rejected">Rejected</option>
+					<option value="all">All</option>
+				</select>
+			</div>
 		</div>
 
 		{#if errorMessage}
@@ -234,11 +255,14 @@
 					<div class="submission-card">
 						<div class="card-header">
 							<span class="submitter-name">{submission.firstName} {submission.lastName}</span>
-							{#if info}
-								<span class="pathway-badge" style="background: #{info.color}">{info.label}</span>
-							{:else}
-								<span class="pathway-badge">{submission.pathway}</span>
-							{/if}
+							<div class="card-badges">
+								<span class="status-badge status-{submission.status}">{STATUS_LABELS[submission.status]}</span>
+								{#if info}
+									<span class="pathway-badge" style="background: #{info.color}">{info.label}</span>
+								{:else}
+									<span class="pathway-badge">{submission.pathway}</span>
+								{/if}
+							</div>
 						</div>
 
 						<div class="card-meta">
@@ -293,7 +317,7 @@
 									{submission.hackatimeProject}
 								</span>
 							{/if}
-							{#if hasAddress(submission.address)}
+							{#if data.isAmbassador && hasAddress(submission.address)}
 								<button
 									type="button"
 									class="link-btn address-btn"
@@ -305,20 +329,22 @@
 							{/if}
 						</div>
 
-						{#if expandedAddress === submission.id}
+						{#if data.isAmbassador && expandedAddress === submission.id && hasAddress(submission.address)}
 							<pre class="address-block">{formatAddress(submission.address)}</pre>
 						{/if}
 
-						<div class="card-actions">
-							<button class="approve-btn" onclick={() => openApprove(submission)}>
-								<Icon icon="checkmark" color="ffffff" alt="Approve" size={16} />
-								Approve
-							</button>
-							<button class="reject-btn" onclick={() => openReject(submission)}>
-								<Icon icon="delete" color="ffffff" alt="Reject" size={16} />
-								Reject
-							</button>
-						</div>
+						{#if submission.status === 'pending'}
+							<div class="card-actions">
+								<button class="approve-btn" onclick={() => openApprove(submission)}>
+									<Icon icon="checkmark" color="ffffff" alt="Approve" size={16} />
+									Approve
+								</button>
+								<button class="reject-btn" onclick={() => openReject(submission)}>
+									<Icon icon="delete" color="ffffff" alt="Reject" size={16} />
+									Reject
+								</button>
+							</div>
+						{/if}
 					</div>
 				{/each}
 			</div>
@@ -521,6 +547,13 @@
 		font-size: 1rem;
 	}
 
+	.card-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		justify-content: flex-end;
+	}
+
 	.pathway-badge {
 		display: inline-block;
 		padding: 0.2rem 0.625rem;
@@ -530,6 +563,34 @@
 		color: white;
 		background: #8492a6;
 		white-space: nowrap;
+	}
+
+	.status-badge {
+		display: inline-block;
+		padding: 0.2rem 0.625rem;
+		border-radius: 999px;
+		font-size: 0.7rem;
+		font-weight: 600;
+		white-space: nowrap;
+		border: 1px solid transparent;
+	}
+
+	.status-pending {
+		background: #fff4e0;
+		color: #b56a00;
+		border-color: #ffd591;
+	}
+
+	.status-approved {
+		background: #e3f9f0;
+		color: #1a9b6c;
+		border-color: #9be3c8;
+	}
+
+	.status-rejected {
+		background: #fef2f2;
+		color: #ec3750;
+		border-color: #fecaca;
 	}
 
 	.card-meta {
