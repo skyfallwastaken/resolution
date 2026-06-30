@@ -54,7 +54,12 @@
 	};
 
 	const availableWeeks = $derived(
-		Array.from(new Set(submissions.map(s => s.week).filter(w => w != null))).sort((a, b) => a - b)
+		Array.from(
+			new Set([
+				...Array.from({ length: data.totalWeeks }, (_, index) => index + 1),
+				...submissions.map(s => s.week).filter(w => w != null)
+			])
+		).sort((a, b) => a - b)
 	);
 
 	const visibleSubmissions = $derived(
