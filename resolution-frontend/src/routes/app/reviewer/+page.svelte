@@ -45,6 +45,7 @@
 	let pathwayFilter = $state('');
 	let weekFilter = $state('');
 	let statusFilter = $state('pending');
+	let sortBy = $state('');
 	let expandedAddress = $state<string | null>(null);
 
 	const STATUS_LABELS: Record<string, string> = {
@@ -62,9 +63,15 @@
 		).sort((a, b) => a - b)
 	);
 
-	const visibleSubmissions = $derived(
-		weekFilter ? submissions.filter(s => String(s.week) === weekFilter) : submissions
-	);
+	const visibleSubmissions = $derived.by(() => {
+		const filtered = weekFilter
+			? submissions.filter(s => String(s.week) === weekFilter)
+			: submissions;
+		if (sortBy === 'hours-desc') {
+			return [...filtered].sort((a, b) => (b.hoursSpent ?? 0) - (a.hoursSpent ?? 0));
+		}
+		return filtered;
+	});
 
 	let approveModal = $state<Submission | null>(null);
 	let rejectModal = $state<Submission | null>(null);
@@ -232,6 +239,13 @@
 					<option value="approved">Approved</option>
 					<option value="rejected">Rejected</option>
 					<option value="all">All</option>
+				</select>
+			</div>
+			<div class="filter-group">
+				<label for="sort-by" class="filter-label">Sort by</label>
+				<select id="sort-by" bind:value={sortBy} class="filter-select">
+					<option value="">Default</option>
+					<option value="hours-desc">Hours (high to low)</option>
 				</select>
 			</div>
 		</div>
